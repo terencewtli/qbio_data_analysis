@@ -20,7 +20,7 @@ barcodes <- read.csv("data/tcga_brca_six_example_ids.txt")
 query <- GDCquery(project = "TCGA-BRCA",
                   data.category = "Transcriptome Profiling",
                   data.type = "Gene Expression Quantification",
-                  workflow.type = "HTSeq - Counts"
+                  workflow.type = "HTSeq - Counts",
                   barcode = c(barcodes))
 
 GDCdownload(query)
