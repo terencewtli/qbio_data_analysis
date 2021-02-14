@@ -29,18 +29,14 @@ library(TCGAbiolinks)
 #str(data) #use this line if you are typing in the command line
 
 #Group 2
-# clinical_file <- read.csv("data/tcga_brca_six_example_clinical.csv") #option to remove this line
-# barcodes <- as.character( clinical_file$bcr_patient_barcode ) #option to remove this line
-# clin_query <- GDCquery(project = "TCGA-BRCA", data.category="Clinical", barcode= barcodes) #option to remove "barcode"
+# clinical_file <- read.csv("data/tcga_brca_six_example_clinical.csv")
+# barcodes <- as.character( clinical_file$bcr_patient_barcode )
+# clin_query <- GDCquery(project = "TCGA-BRCA", data.category="Clinical", barcode= barcodes)
 # GDCdownload(clin_query)
 # clinic <- GDCprepare_clinic(clin_query, clinical.info="patient")
 # str(clinic) #use this line if you are typing in the command line
 
 #Group 3
-#https://docs.gdc.cancer.gov/Data/Bioinformatics_Pipelines/DNA_Seq_Variant_Calling_Pipeline/#somatic-variant-calling-workflow
-# Use above website to determine differences in pipeline argument
-# pipeline can be set to Options: "muse", "varscan2", "somaticsniper", "mutect2"
-
 # mutation <- GDCquery_Maf(tumor = "BRCA",save.csv=TRUE)
 # after running ^^, navigate to the saved csv file. Open the csv file with below Code
 # maf_dataframe <- read.csv("PATH/FILENAME.csv")
