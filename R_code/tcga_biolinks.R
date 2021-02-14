@@ -15,18 +15,18 @@ if (!require(TCGAbiolinks)) BiocManager::install("TCGAbiolinks")
 library(TCGAbiolinks)
 
 #Group 1
-library(SummarizedExperiment)
-clinical_file <- read.csv("data/tcga_brca_six_example_clinical.csv") #option to remove this line
-barcodes <- as.character( clinical_file$barcode ) #option to remove this line
-query <- GDCquery(project = "TCGA-BRCA",
-                  data.category = "Transcriptome Profiling",
-                  data.type = "Gene Expression Quantification",
-                  workflow.type = "HTSeq - Counts",
-                  barcode = c(barcodes))
-
-GDCdownload(query)
-data <- GDCprepare(query)
-str(data)
+# library(SummarizedExperiment) #look up how a SummarizedExperiment is built
+# clinical_file <- read.csv("data/tcga_brca_six_example_clinical.csv")
+# barcodes <- as.character( clinical_file$barcode )
+# query <- GDCquery(project = "TCGA-BRCA",
+#                   data.category = "Transcriptome Profiling",
+#                   data.type = "Gene Expression Quantification",
+#                   workflow.type = "HTSeq - Counts",
+#                   barcode = c(barcodes))
+#
+# GDCdownload(query)
+# data <- GDCprepare(query)
+#str(data) #use this line if you are typing in the command line
 
 #Group 2
 # clinical_file <- read.csv("data/tcga_brca_six_example_clinical.csv") #option to remove this line
@@ -35,3 +35,13 @@ str(data)
 # GDCdownload(clin_query)
 # clinic <- GDCprepare_clinic(clin_query, clinical.info="patient")
 # str(clinic)
+
+#Group 3
+#https://docs.gdc.cancer.gov/Data/Bioinformatics_Pipelines/DNA_Seq_Variant_Calling_Pipeline/#somatic-variant-calling-workflow
+# Use above website to determine differences in pipeline argument
+# pipeline can be set to Options: "muse", "varscan2", "somaticsniper", "mutect2"
+
+# mutation <- GDCquery_Maf(tumor = "BRCA",save.csv=TRUE)
+# after running ^^, navigate to the saved csv file. Open the csv file with below Code
+# maf_dataframe <- read.csv("PATH/FILENAME.csv")
+# str(maf_dataframe)
