@@ -34,7 +34,7 @@ library(TCGAbiolinks)
 # clin_query <- GDCquery(project = "TCGA-BRCA", data.category="Clinical", barcode= barcodes) #option to remove "barcode"
 # GDCdownload(clin_query)
 # clinic <- GDCprepare_clinic(clin_query, clinical.info="patient")
-# str(clinic)
+# str(clinic) #use this line if you are typing in the command line
 
 #Group 3
 #https://docs.gdc.cancer.gov/Data/Bioinformatics_Pipelines/DNA_Seq_Variant_Calling_Pipeline/#somatic-variant-calling-workflow
