@@ -1,7 +1,9 @@
-# if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
-#
+#use following line on the cluster
+# if you are getting an install error
+# Open an R console on the cluster and run: BiocManager::install("TCGAbiolinks")
 if (!require(TCGAbiolinks)) BiocManager::install("TCGAbiolinks")
 
+#uncomment the following lines if using a local machine
 # if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
 # BiocManager::install(c("devtools"))
 # BiocManager::install(c("robustbase"))
