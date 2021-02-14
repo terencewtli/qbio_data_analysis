@@ -15,7 +15,7 @@ if (!require(TCGAbiolinks)) BiocManager::install("TCGAbiolinks")
 library(TCGAbiolinks)
 
 #need to edit this line of code to the path of your example_ids.txt
-barcodes <- read.csv("TCGA_PublicData/example_ids.txt")
+barcodes <- read.csv("R_code/tcga_brca_six_example_ids.txt")
 
 query <- GDCquery(project = "TCGA-BRCA",
                   data.category = "Transcriptome Profiling",
