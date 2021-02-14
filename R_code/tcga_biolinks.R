@@ -16,7 +16,7 @@ library(TCGAbiolinks)
 
 #need to edit this line of code to the path of your example_ids.txt
 clinical_file <- read.csv("data/tcga_brca_six_example_clinical.csv")
-barcodes <- as.character( clinical_file$bcr_patient_barcode )
+barcodes <- as.character( clinical_file$TCGA.barcode.shipped.portion )
 
 query <- GDCquery(project = "TCGA-BRCA",
                   data.category = "Transcriptome Profiling",
