@@ -8,7 +8,7 @@ if (!require(TCGAbiolinks)) BiocManager::install("TCGAbiolinks")
 #          "TCGA-AN-A04A-01A-21R-A034-07","TCGA-AR-A1AP-01A-11R-A12P-07",
 #              "TCGA-A2-A0T3-01A-21R-A115-07", "TCGA-E2-A154-01A-11R-A115-07" )
 #barcodes_clinic <- c("TCGA-BH-A0DG","TCGA-A2-A0YF","TCGA-AN-A04A","TCGA-AR-A1AP", "TCGA-A2-A0T3",
-#                      "TCGA-E2-A154" "TCGA-AO-A12F" "TCGA-A2-A0YM" "TCGA-BH-A0E0" "TCGA-AN-A0FL")
+#                      "TCGA-E2-A154", "TCGA-AO-A12F", "TCGA-A2-A0YM", "TCGA-BH-A0E0", "TCGA-AN-A0FL")
 
 
 #######    Group 1: RNASeq     ############
