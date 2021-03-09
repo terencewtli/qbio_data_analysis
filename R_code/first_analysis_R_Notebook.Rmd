@@ -1,0 +1,232 @@
+R Notebook for First Analysis 
+QBIO Public Data Analysis Student Group
+3/8/2021
+
+
+This code shows another way to install TCGABiolinks if you are having trouble on your local machine
+```{r}
+if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
+if(!requireNamespace("devtools")) BiocManager::install(c("devtools"))
+if(!requireNamespace("robustbase"))BiocManager::install(c("robustbase"))
+library(devtools)
+library(robustbase)
+
+devtools::install_github("BioinformaticsFMRP/TCGAbiolinks")
+
+if(!requireNamespace("SummarizedExperiment"))BiocManager::install(c("SummarizedExperiment"))
+if(!requireNamespace("maftools"))BiocManager::install(c("maftools"))
+```
+
+
+Always use library() to load your packages into the current R workspace / environment
+```{r}
+library(TCGAbiolinks)
+library(maftools)
+library(SummarizedExperiment)
+```
+
+Use these barcodes if using on your local machine as an example for smaller files downloaded
+```{r}
+barcodes_rnaseq <- c("TCGA-BH-A0DG-01A-21R-A12P-07","TCGA-A2-A0YF-01A-21R-A109-07",
+          "TCGA-AN-A04A-01A-21R-A034-07","TCGA-AR-A1AP-01A-11R-A12P-07",
+           "TCGA-A2-A0T3-01A-21R-A115-07", "TCGA-E2-A154-01A-11R-A115-07" )
+barcodes_clinic <- c("TCGA-BH-A0DG","TCGA-A2-A0YF","TCGA-AN-A04A","TCGA-AR-A1AP", "TCGA-A2-A0T3",
+                      "TCGA-E2-A154", "TCGA-AO-A12F", "TCGA-A2-A0YM", "TCGA-BH-A0E0", "TCGA-AN-A0FL")
+```
+
+############## GROUP 1: RNASEQ #############
+
+Download or access data from TCGA. Remember you only need to download the data once. 
+The last line places all the data into a SummarizedExperiment variable called sum_exp.
+```{r}
+query <- GDCquery(project = "TCGA-BRCA",
+                   data.category = "Transcriptome Profiling",
+                   data.type = "Gene Expression Quantification",
+                   workflow.type = "HTSeq - Counts",
+                   barcode = barcodes_rnaseq)
+GDCdownload(query) #only need this line of code ONCE to download the data
+sum_exp <- GDCprepare(query)
+```
+
+Explore the SummarizedExperiment variable sum_exp. See the slides for a useful diagram.
+The str() stands for "structure". It gives an overall view of what your variable looks like
+If you would like to print the entire colData(sum_exp), for example, remove the str() and type colData(sum_exp)
+Note: There is a lot of information here. Whenver you see a "$", this is the name of a column.
+```{r}
+print("Structure of colData")
+str( colData(sum_exp) )
+
+print("Structure of rowData")
+str( rowData(sum_exp) )
+
+print("Structure of assays")
+str( assays(sum_exp) )
+```
+
+Check for understanding!!
+1. What does sum_exp include?
+2. What does colData(sum_exp) include?
+3. What does rowData(sum_exp) include?
+4. What does assays(sum_exp) include?
+
+Answers
+1. sum_exp is a dataframe with a few different parts. Start by considering a table with genes as the rows and patients as the columns. 
+   The table is then populated with the RNASeq count (# of mRNA transcripts found). 
+2. colData(sum_exp) includes information about the columns of this ^^ main table. Here, colData(sum_exp) includes information about each patient. 
+3. rowData(sum_exp) includes information about the rows of this ^^ main table. Here, rowData(sum_exp) includes information about each gene. 
+4. assays(sum_exp) is the main table talked about in (1). In other contexts, we could include more experimental data than just HTSeq. 
+   To access the HTSeq information, use: assays(sum_exp)$"HTSeq - Counts"
+
+```{r}
+print("colData column names")
+colnames(colData(sum_exp))
+
+print("rowData column names")
+colnames(rowData(sum_exp))
+
+print("assays column names")
+colnames(assays(sum_exp)$"HTSeq - Counts")
+```
+
+
+We are interested in the age of the patients. Remember colData(sum_exp) has the patient information
+```{r}
+patient_data <- colData(sum_exp)
+patient_ages <- patient_data$paper_age_at_initial_pathologic_diagnosis
+
+#here we are creating a NEW COLUMN in patient_data called "age_category"
+#NOTE: This will NOT be added to colData(sum_exp). Instead it will only be added to the patient_data data table.
+patient_data$age_category = ifelse(patient_ages < 40, "Young", ifelse(patient_ages >= 60, "Old", "Mid"))
+
+#The ifelse() form is: ifelse( condition, action when condition is true, action when condition is false ). Here we have two ifelse() embedded together
+```
+
+
+Now we want to look at the counts of specific genes for each patient. Remember the format data[row, col]. This accesses the data at a specific row and column. 
+R starts at index 1. So data[1,1] is the top left entry of a table. data[1,] is the entire first row. data[,2] is the entire second column. 
+HTSeq - Counts has the ENSG00000#### format of the gene name as the row and patients as the columns. Draw this out if this is confusing. 
+To access the genes we are interested in, we need to find the ENSG format of their common name. 
+```{r}
+#include quotations around "HTSeq - Counts" because there is a space in the name and R needs to understand it as one name, not three words
+htseq_counts <- assays(sum_exp)$"HTSeq - Counts"
+
+#Genes of interest: TP53, ESR1, PIK3CA, ERBB2
+
+#external_gene_name does NOT need quotation marks because there are no spaces in the name of the column
+TP53_mask <- rowData(sum_exp)$external_gene_name == "TP53"
+TP53_ENSG_name <- rowData(sum_exp)$ensembl_gene_id[ TP53_mask ]
+print(TP53_ENSG_name)
+
+#This is an example of BOOLEAN INDEXING. Let's see for the ESR1 gene:
+#Step 1: The column external_gene_name has a list of normal gene names, including ESR1 We need to access this column by: rowData(sum_exp)$external_gene_name
+#Step 2: We now only want to access the entry with "ESR1". The following line creates a list of True's and False's against the condition: external_gene_name is equal to ESR1. 
+#These lists of True and False are often called "masks"
+#Check for understanding: How many "True's" should be in this list? Answer: 1 
+#Check for understanding: How many "False's" should be in this list? Answer: number of genes - 1
+#Check for understanding: At what spot in the list wil the "True" be located? Answer: The TRUE will be located at whichever row number ESR1 exists. 
+#For example, remember rowData(sum_exp)$external_gene_name is a COLUMN. So the entries are stacked on top of eachother. If ESR1 is the 3rd entry down, ESR1 is in the THIRD row and the TRUE will be located in the THIRD entry of the mask.
+ESR1_mask <- rowData(sum_exp)$external_gene_name == "ESR1"
+
+#Step 3: Now that we have what row pertains to ESR1 we can find the ENSG format. The ENSG format of the ESR1 gene (if following the above example) will be in the THIRD row of the ensembl_gene_id column.
+#We can use our list of one True and many False's to access this entry by using the ENTIRE mask as an INDEX.
+ESR1_ENSG_name <- rowData(sum_exp)$ensembl_gene_id[ ESR1_mask ]
+print(ESR1_ENSG_name)
+
+#Repeat above steps to find the ENSG name for PIK3CA and ESR1. Place them into variables called: PIK3CA_ENSG_name and ESR1_ENSG_name
+```
+
+Now that we have the ENSG0000### name, we can look at the counts for all the patients
+```{r}
+#remember htseq_counts is genes as rows and patients as columns. Here we want to access all the counts for the ESR1 gene
+ESR1_counts <- htseq_counts[ESR1_ENSG_name, ]
+ESR1_counts #do not try to print out all the counts if using all one thousand patients. 
+```
+
+Now we can create our plots! plot() is a default function to create scatter plots. 
+```{r}
+plot(x = patient_data$paper_age_at_initial_pathologic_diagnosis, y = ESR1_counts)
+
+#try using different arguments like main, xlab, and ylab to improve your plot!
+plot(x = patient_data$paper_age_at_initial_pathologic_diagnosis, y = ESR1_counts, main="Cool Title", xlab="Age of patient (years)", ylab="ESR1 Counts from HTSeq")
+
+#Remember if running this on the cluster:
+#jpeg("PATH/name_of_plot.jpg")
+#plot(x = patient_data$paper_age_at_initial_pathologic_diagnosis, y = ESR1_counts, main="Cool Title", xlab="Age of patient (years)", ylab="ESR1 Counts from HTSeq")
+#dev.off()
+
+```
+
+boxplot() is a function to create a boxplot. See the Figures powerpoint if you are unsure of what a box and whiskers plot is!
+```{r}
+#In this scenario, we want age category (young, mid, old) on the x axis and the counts on the y-axis. 
+#Another way to state this is we want RNASeq counts as a function of age_category. In R, there is a fancy way of writing this: y ~ x. "y as a function of x"
+#So here it would be: ESR1_counts ~ age_category
+#We need one more step before creating the boxplot. To use this notation y~x, our x and y variables need to be in the same dataframe. 
+#Up until now, we have a list of ESR1_counts and a column in patient_data called age_category. 
+#Let's add the list of ESR1_counts to patient_data so it is in the same data variable
+patient_data$ESR1_counts <- ESR1_counts
+
+#Now we can create the boxplot, specifying which columns are the x and y (via y~x) and what data frame the columns are from
+boxplot(ESR1_counts~age_category, data = patient_data, main = "Boxplot of HTSeq - Counts for ESR1 by Age Category")
+#Notice only old and young patients are shown. That is because in our barcode arguement, the 6 patients chosen were in the young and old categories. 
+#When creating this with all the patients, you will also have a box for "Mid"
+
+#while these plots may look fine for our 6 patients, when all the patients are added they might look very squished. Feel free to try this.
+#This is because the y-axis range becomes very large. To solve this, we can make our plots on a log scale. 
+#use the sapply function to log10 the entire list of ESR1_counts. Create a new column with these counts
+patient_data$ESR1_counts_log = sapply(patient_data$ESR1_counts, log10)
+boxplot(ESR1_counts_log~age_category, data = patient_data, main = "Boxplot of Log10 HTSeq - Counts for ESR1 by Age Category")
+
+#Check for understanding: What does it mean to log the list of counts? Answer: When using a log10, we are asking what power of 10 the counts are raised to. 
+#Ex. If counts = 10000, then log10(10000) = 4 because 1 * 10^4 = 10000. 
+#Decimals occur when the counts is not an exact power of 10. Ex: log10(7000) = 3.845 because 1 * 10^3.845 = 7000
+
+#Many biologists like to use log base 2. The result is pretty much the same but with a different y-axis.
+patient_data$ESR1_counts_log2 = sapply(patient_data$ESR1_counts, log2)
+boxplot(ESR1_counts_log2~age_category, data = patient_data, main = "Boxplot of Log2 HTSeq - Counts for ESR1 by Age Category")
+```
+
+######### GROUP 2: CLINICAL ##############
+
+######### GROUP 3: MAF ##############
+```{r}
+mutation <- GDCquery_Maf(tumor = "BRCA",save.csv=TRUE, pipeline="mutect2")
+# after running ^^, navigate to the saved csv file. Open the csv file with below Code
+# only need to query once. For repeating code, you can just read in the saved dataframe you created
+#Note you need to find where this file was saved and unzip it
+# Then navigate to it with appropriate path in below line
+#maf_dataframe <- read.maf("PATH/maf_file.maf")
+
+maf_dataframe = read.maf(mutation)
+#See here: https://docs.gdc.cancer.gov/Data/File_Formats/MAF_Format/ for information on each column
+```
+
+The MAF group created a lot of figures from Part 7: https://bioconductor.riken.jp/packages/devel/bioc/vignettes/maftools/inst/doc/maftools.html#7_Visualization
+Look at the Figures powerpoint for more information on each plot
+```{r}
+#Remember to use commented code when on the cluster and then use rsnyc to copy to local machine
+#pdf("maf_summary.pdf")
+plotmafSummary(maf = maf_dataframe, rmOutlier = TRUE, addStat = 'median', dashboard = TRUE, titvRaw = FALSE)
+#dev.off()
+
+#Lollipop plot for any gene, here ESR1 was used. 
+lollipopPlot(maf = maf_dataframe, gene = 'ESR1', labelPos="all", labPosSize = 0.5, labPosAngle = 90)
+
+#VAF plot
+plotVaf(maf = maf_dataframe)
+
+#TCGA Comparison
+tcgaCompare(maf = maf_dataframe, cohortName = "Example-BRCA", logscale = TRUE, capture_size = 50)
+
+#Rainfall plot
+brca <- system.file("extdata", "brca.maf.gz", package = "maftools")
+brca = read.maf(maf = brca, verbose = FALSE)
+rainfallPlot(maf = brca, detectChangePoints = TRUE, pointSize = 0.4)
+
+#Transitions and Transversions
+laml.titv = titv(maf = maf_dataframe, plot = FALSE, useSyn = TRUE)
+
+#Oncoplot
+oncoplot(maf = maf_dataframe, draw_titv = TRUE)
+```
+
