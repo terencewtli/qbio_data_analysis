@@ -15,6 +15,9 @@ devtools::install_github("BioinformaticsFMRP/TCGAbiolinks")
 
 if(!requireNamespace("SummarizedExperiment"))BiocManager::install(c("SummarizedExperiment"))
 if(!requireNamespace("maftools"))BiocManager::install(c("maftools"))
+if(!requireNamespace("arsenal"))install.packages(c("arsenal"))
+if(!requireNamespace("survival"))install.packages(c("survival"))
+if(!requireNamespace("survminer"))install.packages(c("survminer"))
 ```
 
 
@@ -23,6 +26,9 @@ Always use library() to load your packages into the current R workspace / enviro
 library(TCGAbiolinks)
 library(maftools)
 library(SummarizedExperiment)
+library(arsenal)
+library(survival)
+library(survminer)
 ```
 
 Use these barcodes if using on your local machine as an example for smaller files downloaded
@@ -187,6 +193,77 @@ boxplot(ESR1_counts_log2~age_category, data = patient_data, main = "Boxplot of L
 ```
 
 ######### GROUP 2: CLINICAL ##############
+```{r}
+clin_query <- GDCquery(project = "TCGA-BRCA", data.category="Clinical", barcode=barcodes_clinic)
+GDCdownload( clin_query ) #only need this command once. This downloads the files onto your system.
+clinic <- GDCprepare_clinic(clin_query, clinical.info="patient")
+names(clinic)[names(clinic) == "days_to_last_followup"] = "days_to_last_follow_up" #fixes an error in the name of the column
+```
+
+We are interested in the age category again. The ifelse structure is used.
+ifelse(condition, action when condition true, action when condition false)
+```{r}
+age_clinical = clinic$age_at_initial_pathologic_diagnosis
+clinic$age_category = ifelse(age_clinical < 40, "Young", ifelse(age_clinical >= 60, "Old", "Mid"))
+```
+
+We can also load in the subtype information for each patient. This information is not included in the original Clinical file
+and must be accessed separately. Note the TCGAquery_subtype does NOT have a barcode argument
+```{r}
+subtypes <- TCGAquery_subtype(tumor = "BRCA")
+age_subs = subtypes$age_at_initial_pathologic_diagnosis
+
+#also add the age category to the subtypes information
+subtypes$age_category = ifelse(age_subs < 40, "Young", ifelse(age_subs >= 60, "Old", "Mid"))
+```
+
+Create a summary table of information by age_category. When the df prints, you can use the button in the bottom right to go to next page. Don't worry too much about the p-values. 
+Instead, use this to understand the overall distribution of patients. Ex, 12.6% of old patients are Basal subtype whereas 21.1% of young patients are Basal. Also notice there are 508 old patients vs 76 young patients. Does this affect our analysis?
+```{r}
+table_arse <- tableby(age_category ~ (pathologic_stage)  + (BRCA_Pathology) + (BRCA_Subtype_PAM50),
+	          data = subtypes, numeric.test="kwt", cat.test="chisq", 
+	          numeric.stats = c("Nmiss", "meansd"), total=FALSE)
+df <- as.data.frame(summary(table_arse, text=TRUE, pfootnote=TRUE))
+df 
+
+write.csv(df, "data/tby.csv", row.names=FALSE) #Edit this to save in your desired path and filename
+```
+
+Create Kaplan Meier Curves using TCGAanalyze_survival(). 
+Depending on what variable you are interested in, you can modify the below code.
+Use colnames(clinic) to look for variables of interest
+```{r}
+#modify to your desired file path and name to save the figure. 
+#On the cluster use ls and rsync to find the file and copy to your local
+
+TCGAanalyze_survival(clinic, "ethnicity", filename="./survival_curves/survival_ethnicity.pdf")
+TCGAanalyze_survival(clinic, "menopause_status", filename="./survival_curves/survival_menopause.pdf")
+TCGAanalyze_survival(clinic, "breast_carcinoma_progesterone_receptor_status",   filename="./survival_curves/survival_progesterone.pdf")
+```
+
+
+Create Cox Hazards plots. The cox hazards calculations are sometimes more useful than the plots themselves.
+```{r}
+#defines survival as days_to_death. If unavailable, survival is days to last follow up.
+overall_survival <- as.integer( ifelse( is.na(clinic$days_to_death), clinic$days_to_last_follow_up, clinic$days_to_death) )
+
+#create new column in clinic with our overall_survival definition 
+clinic$overall_survival <- overall_survival
+
+#define death event as 1 and alive as 0. 
+clinic$death_event <- ifelse(clinic$vital_status == 'alive', 0,1)
+
+#colnames(clinic) #use if want to visually see affect of above code and which columns were added
+
+cox_fit <- coxph(Surv(overall_survival, death_event)~age_at_initial_pathologic_diagnosis, data=clinic)
+cox_fit
+#jpeg("cox_plot_age_continuous.jpg")
+ggadjustedcurves(cox_fit, data=clinic)
+#dev.off()
+
+```
+
+
 
 ######### GROUP 3: MAF ##############
 ```{r}
