@@ -21,6 +21,12 @@ if (!require(TCGAbiolinks)) BiocManager::install("TCGAbiolinks")
 # sum_exp <- GDCprepare(query)
 # Create a tutorial on SummarizedExperiment
 
+# run the following lines to convert rnaseq barcodes to clinic barcodes
+# pattern <- "^.*?-.*?-...."
+# m <- regexpr(pattern, sum_exp$barcode)
+# regmatches(sum_exp$barcode, m)
+# sum_exp$barcode <- regmatches(sum_exp$barcode, m)
+
 # Boxplots by age
 # Add a new column to colData called "age_category"
 # If age_at_initial_pathologic_diagnosis is < 40, define patient as "Young" in new column
