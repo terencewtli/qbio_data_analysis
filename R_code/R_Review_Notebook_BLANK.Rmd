@@ -4,18 +4,20 @@ QBIO Public Data Analysis Student Group
 
 Here is a review R Notebook. This is designed to be useful for the small group project. 
 ```{r}
-if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
-if(!requireNamespace("devtools")) BiocManager::install(c("devtools"))
-if(!requireNamespace("robustbase"))BiocManager::install(c("robustbase"))
-library(devtools)
-library(robustbase)
+#if(!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
+#if(!requireNamespace("devtools")) BiocManager::install(c("devtools"))
+#if(!requireNamespace("robustbase"))BiocManager::install(c("robustbase"))
+#library(devtools)
+#library(robustbase)
 
-devtools::install_github("BioinformaticsFMRP/TCGAbiolinks")
+#devtools::install_github("BioinformaticsFMRP/TCGAbiolinks")
 
 if(!requireNamespace("SummarizedExperiment"))BiocManager::install(c("SummarizedExperiment"))
+if(!requireNamespace("HDF5Array"))BiocManager::install("HDF5Array")
 
 library(TCGAbiolinks)
 library(SummarizedExperiment)
+library(HDF5Array)
 ```
 
 Use these barcodes if using on your local machine as an example for smaller files downloaded
@@ -173,10 +175,31 @@ Notice that in colnames(colData(sum_exp)) there are two columns that discuss bar
 Notice the barcode is longer with extra numbers and letters. This is because it refers the the tumor SAMPLE.
 The bcr_patient_barcode refers to the PATIENT. You can imagine that one PATIENT can have multiple tumor SAMPLES.
 The bcr_patient_barcode is the same in the clinical data, and the subtypes dataframe above. 
-In your project, you can use this barcode to interface between breast cancer subtype (an important factor in breast cancer) and the RNASeq counts.
+Alternatively, you can use the colData(sum_exp)$paper_BRCA_Subtype_PAM50 column in sum_exp
 ```{r}
 head( colData(sum_exp)$barcode )
 head( colData(sum_exp)$bcr_patient_barcode )
+head( colData(sum_exp)$paper_BRCA_Subtype_PAM50 )
 ```
 
+5. Note about saving the SummarizedExperiment
+As you perform your analysis, you can reload in your TCGA HTSeq data through the query function as we have been doing. 
+Alternatively, you can do the query once, and save the SummarizedExperiment as an HDF5Array
+   1. Use getwd() to print out your current PATH. This is where you are currently located in your system. 
+   2. Whenever you are saving or loading in files, you can use setwd() to specify the PATH you wish to reference. 
+   3. Use saveHDF5SummarizedExperiment() to save your SummarizedExperiment in desired directory (dir). Remember, this is RELATIVE to your current location or PATH that you just specified in setwd(), or looked at in getwd(). 
+   
+Source: https://bioconductor.org/packages/release/bioc/manuals/HDF5Array/man/HDF5Array.pdf
+
+```{r}
+getwd()
+setwd("C:/Users/Kate/qbio_data_analysis/")
+
+#the dir 
+saveHDF5SummarizedExperiment(sum_exp, dir="htseq_h5_sumexp", prefix="", replace=FALSE,chunkdim=NULL, level=NULL, as.sparse=NA,verbose=NA)
+
+#To load in your hdf5 summarizedexperiment
+sum_exp_loaded <- loadHDF5SummarizedExperiment(dir="htseq_h5_sumexp", prefix="")
+str(sum_exp_loaded)
+```
 
