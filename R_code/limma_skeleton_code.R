@@ -1,8 +1,6 @@
-if (!require(matrixStats)) install.packages(matrixStats)
 if (!require(TCGAbiolinks)) BiocManager::install("TCGAbiolinks")
 if (!require(limma)) BiocManager::install("limma")
 
-library(matrixStats)
 library(TCGAbiolinks)
 library(limma)
 
